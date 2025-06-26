@@ -124,26 +124,26 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
                     <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                    <input type="date" id="date" class="form-input">
+                    <input type="date" id="date" class="form-input w-full"> <!-- Added w-full -->
                 </div>
                 <div>
                     <label for="transactionType" class="block text-sm font-medium text-gray-700 mb-1">Transaction Type</label>
-                    <select id="transactionType" class="form-select">
+                    <select id="transactionType" class="form-select w-full"> <!-- Added w-full -->
                         <option value="Buy">Buy</option>
                         <option value="Sell">Sell</option>
                     </select>
                 </div>
                 <div>
                     <label for="tickerSymbol" class="block text-sm font-medium text-gray-700 mb-1">Ticker Symbol</label>
-                    <input type="text" id="tickerSymbol" placeholder="e.g., AAPL" class="form-input uppercase">
+                    <input type="text" id="tickerSymbol" placeholder="e.g., AAPL" class="form-input w-full uppercase"> <!-- Added w-full -->
                 </div>
                 <div>
                     <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-                    <input type="number" id="quantity" min="1" placeholder="e.g., 10" class="form-input">
+                    <input type="number" id="quantity" min="1" placeholder="e.g., 10" class="form-input w-full"> <!-- Added w-full -->
                 </div>
                 <div>
                     <label for="price" class="block text-sm font-medium text-gray-700 mb-1">Price (per share)</label>
-                    <input type="number" id="price" min="0.01" step="0.01" placeholder="e.g., 150.25" class="form-input">
+                    <input type="number" id="price" min="0.01" step="0.01" placeholder="e.g., 150.25" class="form-input w-full"> <!-- Added w-full -->
                 </div>
             </div>
             <button id="addTransactionBtn" class="w-full">Add Transaction</button>
@@ -473,29 +473,3 @@
     </script>
 </body>
 </html>
-```
-
-### Addressing Mobile Compatibility:
-
-The provided code already incorporates several best practices for responsive web design, largely thanks to the use of **Tailwind CSS** and the **`viewport` meta tag**:
-
-1.  **Viewport Meta Tag:**
-    * `<meta name="viewport" content="width=device-width, initial-scale=1.0">` is present in the `<head>`, which is crucial. This tells the browser to set the width of the viewport to the device's width and not to scale it initially.
-
-2.  **Tailwind CSS Responsive Utilities:**
-    * **Fluid Layouts:** The main content container uses `max-w-7xl mx-auto`, which ensures it scales appropriately on larger screens while maintaining good readability. On smaller screens, `mx-auto` (margin auto) centers it, and the `max-w-7xl` means it won't constrain the width, allowing it to naturally fill the available space.
-    * **Responsive Grids:** The form inputs use `grid grid-cols-1 md:grid-cols-3 gap-4`. This means on mobile (small screens), the inputs will stack vertically in a single column (`grid-cols-1`), and on medium screens (`md:`) and larger, they will arrange into three columns. This is a very effective way to handle form responsiveness.
-    * **Full-Width Inputs:** `width: 100%` on `input` and `select` elements ensures they always fill the available width of their parent container, preventing overflow on small screens.
-    * **Table Responsiveness:** The `overflow-x-auto` class on the `div` wrapping the table allows the table to scroll horizontally if its content is too wide for the screen, rather than breaking the layout or shrinking content illegibly. This is a standard and effective solution for wide tables on mobile.
-
-3.  **Touch Target Sizing:**
-    * Input fields (`height: 2.75rem;` and `padding: 0.6rem 0.8rem;`) and buttons (`padding: 0.75rem 1.5rem;`) are generously sized, making them easy to tap accurately on touchscreens.
-
-**Why it might "not seem to work" on mobile:**
-
-Even with these features, "doesn't seem to work" can be subjective on mobile.
-* **Horizontal Scrolling:** If your table contains many columns or very long text within cells, the `overflow-x-auto` will cause horizontal scrolling. While this is the intended responsive behavior for tables that don't fit, some users might perceive it as "not working" if they expect a perfectly reflowed layout without any scrolling.
-* **Performance:** Older or less powerful mobile devices might experience slower loading times or less smooth interactions, especially with real-time database updates.
-* **Network Issues:** Mobile network connectivity can be less stable than Wi-Fi, potentially leading to more visible loading or transaction errors if the connection is intermittent.
-
-The current implementation follows standard best practices for mobile responsiveness. If you are experiencing specific layout or interaction issues beyond typical horizontal table scrolling, please try to pinpoint the exact behavior (e.g., "the button is too small," "the text overflows the screen," "I can't type in the field"). This will help in further debuggi
