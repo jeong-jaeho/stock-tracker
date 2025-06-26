@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Trading Tracker</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 0.5rem; /* Rounded corners for the table */
+            overflow: hidden; /* Ensures rounded corners apply to content */
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0; /* Light gray border */
+        }
+        th {
+            background-color: #4f46e5; /* Indigo 600 */
+            color: white;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc; /* Lighter background for even rows */
+        }
+        tr:hover {
+            background-color: #eef2ff; /* Light indigo on hover */
+        }
+        input[type="text"], input[type="number"], input[type="date"], select {
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #cbd5e1; /* Slate 300 */
+            border-radius: 0.375rem; /* Rounded corners */
+            outline: none;
+            transition: border-color 0.2s;
+            width: 100%; /* Full width for inputs */
+            height: 2.75rem; /* Approximately 44px */
+        }
+        input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, select:focus {
+            border-color: #6366f1; /* Indigo 500 on focus */
+        }
+        button {
+            padding: 0.75rem 1.5rem;
+            background-color: #4f46e5; /* Indigo 600 */
+            color: white;
+            border: none;
+            border-radius: 0.5rem; /* Rounded corners */
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        }
+        button:hover {
+            background-color: #4338ca; /* Indigo 700 */
+            transform: translateY(-1px); /* Slight lift effect */
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        /* Custom styling for the message box */
+        #messageBox {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none; /* Hidden by default */
+            text-align: center;
+        }
+        #messageBox button {
+            margin-top: 15px;
+            background-color: #4f46e5;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            font-size: 1.5rem;
+            color: #4f46e5;
+        }
+    </style>
+</head>
+<body class="p-8">
+
+    <div id="loadingOverlay">Loading...</div>
+
+    <div class="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-xl">
+        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-8">Stock Trading Tracker</h1>
+
+        <!-- Overall Summary Section -->
+        <div id="overallSummary" class="mb-6 p-4 bg-indigo-100 rounded-lg shadow-md text-center">
+            <h2 class="text-xl font-semibold text-indigo-800 mb-2">Overall Profit/Loss: 
+                <span id="overallProfitLossDisplay" class="font-bold text-2xl">
+                    $0.00
+                </span>
+            </h2>
+             <p class="text-sm text-gray-600">User ID: <span id="userIdDisplay">Loading...</span></p>
+        </div>
+
+        <div class="mb-8 p-6 bg-indigo-50 rounded-lg shadow-inner">
+            <h2 class="text-2xl font-semibold text-indigo-800 mb-4">Add New Transaction</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                    <input type="date" id="date" class="form-input">
+                </div>
+                <div>
+                    <label for="transactionType" class="block text-sm font-medium text-gray-700 mb-1">Transaction Type</label>
+                    <select id="transactionType" class="form-select">
+                        <option value="Buy">Buy</option>
+                        <option value="Sell">Sell</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="tickerSymbol" class="block text-sm font-medium text-gray-700 mb-1">Ticker Symbol</label>
+                    <input type="text" id="tickerSymbol" placeholder="e.g., AAPL" class="form-input uppercase">
+                </div>
+                <div>
+                    <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                    <input type="number" id="quantity" min="1" placeholder="e.g., 10" class="form-input">
+                </div>
+                <div>
+                    <label for="price" class="block text-sm font-medium text-gray-700 mb-1">Price (per share)</label>
+                    <input type="number" id="price" min="0.01" step="0.01" placeholder="e.g., 150.25" class="form-input">
+                </div>
+            </div>
+            <button id="addTransactionBtn" class="w-full">Add Transaction</button>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white shadow-md">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Ticker</th>
+                        <th>Quantity</th>
+                        <th>Price (per share)</th>
+                        <th>Total Value</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionTableBody">
+                    <!-- Transaction rows will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Message Box HTML -->
+    <div id="messageBox" class="rounded-lg">
+        <p id="messageText" class="text-gray-800"></p>
+        <button onclick="document.getElementById('messageBox').style.display='none'">Close</button>
+    </div>
+
+    <script type="module">
+        // Import Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Get references to HTML elements
+        const dateInput = document.getElementById('date');
+        const transactionTypeInput = document.getElementById('transactionType');
+        const tickerSymbolInput = document.getElementById('tickerSymbol');
+        const quantityInput = document.getElementById('quantity');
+        const priceInput = document.getElementById('price');
+        const addTransactionBtn = document.getElementById('addTransactionBtn');
+        const transactionTableBody = document.getElementById('transactionTableBody');
+        const overallProfitLossDisplay = document.getElementById('overallProfitLossDisplay');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        // Initialize Firebase variables
+        let db;
+        let auth;
+        let userId;
+        let transactionsCollectionRef;
+
+        // Portfolio state (derived from transactions)
+        let portfolio = {}; // Stores { 'TICKER': { quantity: X, totalCost: Y } }
+        let overallProfitLoss = 0;
+
+        // Function to display custom messages
+        function showMessage(message) {
+            const messageBox = document.getElementById('messageBox');
+            const messageText = document.getElementById('messageText');
+            messageBox.style.display = 'block';
+            messageText.textContent = message;
+        }
+
+        // Function to update the overall profit/loss display
+        function updateOverallSummary() {
+            overallProfitLossDisplay.textContent = `$${overallProfitLoss.toFixed(2)}`;
+            if (overallProfitLoss >= 0) {
+                overallProfitLossDisplay.classList.remove('text-red-600');
+                overallProfitLossDisplay.classList.add('text-green-600');
+            } else {
+                overallProfitLossDisplay.classList.remove('text-green-600');
+                overallProfitLossDisplay.classList.add('text-red-600');
+            }
+        }
+
+        // Function to rebuild portfolio and calculate profit/loss from fetched transactions
+        function calculatePortfolioAndProfitLoss(transactions) {
+            portfolio = {}; // Reset portfolio
+            overallProfitLoss = 0; // Reset overall P/L
+
+            transactions.forEach(transaction => {
+                const { type, tickerSymbol, quantity, price } = transaction;
+                if (type === 'Buy') {
+                    if (portfolio[tickerSymbol]) {
+                        portfolio[tickerSymbol].totalCost += quantity * price;
+                        portfolio[tickerSymbol].quantity += quantity;
+                    } else {
+                        portfolio[tickerSymbol] = {
+                            quantity: quantity,
+                            totalCost: quantity * price
+                        };
+                    }
+                } else if (type === 'Sell') {
+                    if (portfolio[tickerSymbol] && portfolio[tickerSymbol].quantity >= quantity) {
+                        const averageCost = portfolio[tickerSymbol].totalCost / portfolio[tickerSymbol].quantity;
+                        const currentTradeProfitLoss = (price - averageCost) * quantity;
+                        overallProfitLoss += currentTradeProfitLoss;
+
+                        portfolio[tickerSymbol].totalCost -= averageCost * quantity;
+                        portfolio[tickerSymbol].quantity -= quantity;
+
+                        if (portfolio[tickerSymbol].quantity === 0) {
+                            delete portfolio[tickerSymbol];
+                        }
+                    } else {
+                        // This case should ideally not happen if data is consistent, but for robustness
+                        console.warn(`Attempted to sell ${quantity} of ${tickerSymbol}, but only ${portfolio[tickerSymbol] ? portfolio[tickerSymbol].quantity : 0} available.`);
+                        // Optionally add logic to track "phantom" sales or adjust overallProfitLoss for missing buys
+                    }
+                }
+            });
+            updateOverallSummary();
+        }
+
+        // Function to add a new transaction to Firestore
+        async function addTransactionToFirestore() {
+            // Get values from input fields
+            const date = dateInput.value;
+            const type = transactionTypeInput.value;
+            const tickerSymbol = tickerSymbolInput.value.trim().toUpperCase();
+            const quantity = parseFloat(quantityInput.value);
+            const price = parseFloat(priceInput.value);
+
+            // Basic validation
+            if (!date || !tickerSymbol || isNaN(quantity) || isNaN(price) || quantity <= 0 || price <= 0) {
+                showMessage("Please fill in all fields with valid positive numbers for quantity and price.");
+                return;
+            }
+
+            // Client-side check for sell transactions before sending to Firestore
+            if (type === 'Sell') {
+                if (!portfolio[tickerSymbol] || portfolio[tickerSymbol].quantity < quantity) {
+                    showMessage(`Insufficient shares of ${tickerSymbol} to sell. Current holding: ${portfolio[tickerSymbol] ? portfolio[tickerSymbol].quantity : 0}`);
+                    return;
+                }
+            }
+
+            // Create transaction object
+            const transactionData = {
+                date: date,
+                type: type,
+                tickerSymbol: tickerSymbol,
+                quantity: quantity,
+                price: price,
+                totalValue: (quantity * price), // Store raw number for calculations
+                timestamp: serverTimestamp() // Add a server timestamp for ordering
+            };
+
+            try {
+                await addDoc(transactionsCollectionRef, transactionData);
+                // Data will be updated via onSnapshot listener, no need to manually add to table here.
+                
+                // Clear input fields after successful add
+                dateInput.value = '';
+                transactionTypeInput.value = 'Buy';
+                tickerSymbolInput.value = '';
+                quantityInput.value = '';
+                priceInput.value = '';
+                // Set default date back to today
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                dateInput.value = `${year}-${month}-${day}`;
+
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                showMessage("Error adding transaction. Please try again.");
+            }
+        }
+
+        // Event listener for Add Transaction button
+        addTransactionBtn.addEventListener('click', addTransactionToFirestore);
+
+        // Firebase Initialization and Authentication
+        window.onload = async function () {
+            // Hide loading overlay
+            loadingOverlay.style.display = 'flex';
+
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+            if (Object.keys(firebaseConfig).length === 0) {
+                console.error("Firebase config is not defined. Please ensure __firebase_config is set.");
+                showMessage("Application configuration error. Please contact support.");
+                loadingOverlay.style.display = 'none';
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Sign in with custom token if available, otherwise anonymously
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                    console.log("Signed in with custom token");
+                } else {
+                    await signInAnonymously(auth);
+                    console.log("Signed in anonymously");
+                }
+
+                // Listen for auth state changes to get user ID and initialize Firestore listener
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userIdDisplay.textContent = userId;
+                        console.log("User ID:", userId);
+
+                        // Define Firestore collection path for user-specific private data
+                        transactionsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/transactions`);
+
+                        // Set up real-time listener for transactions
+                        const q = query(transactionsCollectionRef, orderBy('timestamp', 'asc')); // Order by timestamp to maintain order
+
+                        onSnapshot(q, (snapshot) => {
+                            transactionTableBody.innerHTML = ''; // Clear existing table rows
+                            const allTransactions = []; // To store all transactions for portfolio calculation
+
+                            snapshot.forEach((doc) => {
+                                const data = doc.data();
+                                allTransactions.push(data); // Add to array for calculation
+
+                                const newRow = document.createElement('tr');
+                                newRow.innerHTML = `
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${data.date}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${data.type}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${data.tickerSymbol}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${data.quantity}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">$${data.price.toFixed(2)}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">$${data.totalValue.toFixed(2)}</td>
+                                `;
+                                transactionTableBody.appendChild(newRow);
+                            });
+
+                            // After all transactions are rendered, recalculate portfolio and profit/loss
+                            calculatePortfolioAndProfitLoss(allTransactions);
+                            loadingOverlay.style.display = 'none'; // Hide loading after data is loaded
+                        }, (error) => {
+                            console.error("Error listening to transactions:", error);
+                            showMessage("Error loading transactions. Please try again.");
+                            loadingOverlay.style.display = 'none';
+                        });
+
+                    } else {
+                        userIdDisplay.textContent = "Not authenticated";
+                        loadingOverlay.style.display = 'none';
+                        console.log("No user signed in.");
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error initializing Firebase or signing in:", error);
+                showMessage("Failed to initialize application. Check console for details.");
+                loadingOverlay.style.display = 'none';
+            }
+
+            // Set default date to today
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            dateInput.value = `${year}-${month}-${day}`;
+        };
+    </script>
+</body>
+</html>
