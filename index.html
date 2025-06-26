@@ -357,8 +357,7 @@
                 const year = today.getFullYear();
                 const month = String(today.getMonth() + 1).padStart(2, '0');
                 const day = String(today.getDate()).padStart(2, '0');
-                dateInput.value = `${year}-${month}-${dd}`;
-
+                dateInput.value = `${year}-${month}-${day}`; // Changed dd to day
             } catch (e) {
                 console.error("Error adding document to Firestore: ", e);
                 showMessage("Error adding transaction. Please try again. Check console for details.");
@@ -432,10 +431,11 @@
 
                 // Set up onAuthStateChanged listener immediately
                 onAuthStateChanged(auth, (user) => {
-                    // If an existing Firestore listener is active, unsubscribe it before setting up a new one
+                    // Always unsubscribe the previous listener whenever auth state changes.
+                    // This ensures no old listeners are active after sign-out or sign-in.
                     if (unsubscribeFromFirestore) {
                         unsubscribeFromFirestore();
-                        unsubscribeFromFirestore = null; // Reset the variable
+                        unsubscribeFromFirestore = null; 
                         console.log("Previous Firestore listener unsubscribed.");
                     }
 
@@ -445,10 +445,10 @@
                         userIdDisplay.textContent = user.email || userId; // Display email if available, else UID
                         console.log("User ID confirmed:", userId);
 
-                        transactionsCollectionRef = collection(db, `users/${userId}/transactions`); // Simpler path for specific user
+                        transactionsCollectionRef = collection(db, `users/${userId}/transactions`); 
                         console.log("Firestore collection path set:", `users/${userId}/transactions`);
 
-                        // Attach real-time listener for transactions
+                        // Attach a new real-time listener ONLY if the user is signed in.
                         const q = query(transactionsCollectionRef, orderBy('timestamp', 'asc'));
 
                         unsubscribeFromFirestore = onSnapshot(q, (snapshot) => {
@@ -477,12 +477,12 @@
                             body.classList.add('logged-in-state'); // Show app content
                         }, (error) => {
                             console.error("Error listening to transactions from Firestore:", error);
-                            // Only show message if it's not a permission denied error on sign-out
-                            // This check might be too simplistic if other non-sign-out permission errors occur
-                            if (error.code !== 'permission-denied') { 
+                            // ONLY show error message if a user is still authenticated (i.e., not a sign-out related permission error).
+                            // This checks the *current* authentication state, not the state at the time of the error.
+                            if (auth.currentUser) { 
                                 showMessage("Error loading transactions. Please try again. Check console for details.");
                             } else {
-                                console.log("Permission denied error during onSnapshot, likely due to sign-out.");
+                                console.log("Firestore listener received error, but user is logged out (likely permission-denied due to sign-out). Suppressing user message.");
                             }
                             loadingOverlay.style.display = 'none';
                         });
@@ -498,8 +498,7 @@
                         body.classList.remove('logged-in-state');
                         body.classList.add('logged-out-state'); // Show login section
                         console.log("User is not signed in.");
-                        // Do NOT show error message here, as it's an expected state change
-                        // showMessage("Please sign in with Google to access your data."); // This message is already in HTML, good to remove here
+                        // No need to show error message here. The UI is correctly updated for signed-out state.
                     }
                 });
 
