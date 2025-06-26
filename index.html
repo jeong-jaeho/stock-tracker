@@ -229,6 +229,7 @@
         let userId;
         let transactionsCollectionRef;
         const provider = new GoogleAuthProvider(); // Google Auth Provider
+        let unsubscribeFromFirestore = null; // Variable to hold the unsubscribe function
 
         // Portfolio state (derived from transactions)
         let portfolio = {}; // Stores { 'TICKER': { quantity: X, totalCost: Y } }
@@ -356,7 +357,7 @@
                 const year = today.getFullYear();
                 const month = String(today.getMonth() + 1).padStart(2, '0');
                 const day = String(today.getDate()).padStart(2, '0');
-                dateInput.value = `${year}-${month}-${day}`;
+                dateInput.value = `${year}-${month}-${dd}`;
 
             } catch (e) {
                 console.error("Error adding document to Firestore: ", e);
@@ -431,8 +432,15 @@
 
                 // Set up onAuthStateChanged listener immediately
                 onAuthStateChanged(auth, (user) => {
+                    // If an existing Firestore listener is active, unsubscribe it before setting up a new one
+                    if (unsubscribeFromFirestore) {
+                        unsubscribeFromFirestore();
+                        unsubscribeFromFirestore = null; // Reset the variable
+                        console.log("Previous Firestore listener unsubscribed.");
+                    }
+
                     if (user) {
-                        // User is signed in (either from Google or previously anonymous)
+                        // User is signed in
                         userId = user.uid;
                         userIdDisplay.textContent = user.email || userId; // Display email if available, else UID
                         console.log("User ID confirmed:", userId);
@@ -443,7 +451,7 @@
                         // Attach real-time listener for transactions
                         const q = query(transactionsCollectionRef, orderBy('timestamp', 'asc'));
 
-                        onSnapshot(q, (snapshot) => {
+                        unsubscribeFromFirestore = onSnapshot(q, (snapshot) => {
                             transactionTableBody.innerHTML = ''; 
                             const allTransactions = []; 
 
@@ -469,7 +477,13 @@
                             body.classList.add('logged-in-state'); // Show app content
                         }, (error) => {
                             console.error("Error listening to transactions from Firestore:", error);
-                            showMessage("Error loading transactions. Please try again. Check console for details.");
+                            // Only show message if it's not a permission denied error on sign-out
+                            // This check might be too simplistic if other non-sign-out permission errors occur
+                            if (error.code !== 'permission-denied') { 
+                                showMessage("Error loading transactions. Please try again. Check console for details.");
+                            } else {
+                                console.log("Permission denied error during onSnapshot, likely due to sign-out.");
+                            }
                             loadingOverlay.style.display = 'none';
                         });
 
@@ -484,7 +498,8 @@
                         body.classList.remove('logged-in-state');
                         body.classList.add('logged-out-state'); // Show login section
                         console.log("User is not signed in.");
-                        showMessage("Please sign in with Google to access your data.");
+                        // Do NOT show error message here, as it's an expected state change
+                        // showMessage("Please sign in with Google to access your data."); // This message is already in HTML, good to remove here
                     }
                 });
 
