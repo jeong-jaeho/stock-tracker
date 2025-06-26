@@ -360,13 +360,13 @@
             // --- IMPORTANT: REPLACE THESE PLACEHOLDERS WITH YOUR ACTUAL FIREBASE CONFIG ---
             // You will get this from your Firebase Project settings > Web App > Firebase SDK snippet (Config)
             const currentFirebaseConfig = {
-                apiKey: "AIzaSyAk8dsy2dQkKJuxGDpWj9DJUq_4Xh_0MUM", // 여기에 실제 API 키를 입력하세요!
-                authDomain: "stock-management-tracker.firebaseapp.com", // 여기에 실제 Auth 도메인을 입력하세요!
-                projectId: "stock-management-tracker", // 여기에 실제 프로젝트 ID를 입력하세요!
-                storageBucket: "stock-management-tracker.firebasestorage.app", // 여기에 실제 스토리지 버킷을 입력하세요!
-                messagingSenderId: "16895343416", // 여기에 실제 메시징 센더 ID를 입력하세요!
-                appId: "1:16895343416:web:f8b437473af145453fdfcd", // 여기에 실제 앱 ID를 입력하세요!
-                measurementId: "G-Q9T99JBD05" // Optional, but included as provided
+                apiKey: "AIzaSyAk8dsy2dQkKJuxGDpWj9DJUq_4Xh_0MUM", 
+                authDomain: "stock-management-tracker.firebaseapp.com", 
+                projectId: "stock-management-tracker", 
+                storageBucket: "stock-management-tracker.firebasestorage.app", 
+                messagingSenderId: "16895343416", 
+                appId: "1:16895343416:web:f8b437473af145453fdfcd", 
+                measurementId: "G-Q9T99JBD05" 
             };
             // --- END OF IMPORTANT SECTION ---
 
@@ -473,3 +473,29 @@
     </script>
 </body>
 </html>
+```
+
+### Addressing Mobile Compatibility:
+
+The provided code already incorporates several best practices for responsive web design, largely thanks to the use of **Tailwind CSS** and the **`viewport` meta tag**:
+
+1.  **Viewport Meta Tag:**
+    * `<meta name="viewport" content="width=device-width, initial-scale=1.0">` is present in the `<head>`, which is crucial. This tells the browser to set the width of the viewport to the device's width and not to scale it initially.
+
+2.  **Tailwind CSS Responsive Utilities:**
+    * **Fluid Layouts:** The main content container uses `max-w-7xl mx-auto`, which ensures it scales appropriately on larger screens while maintaining good readability. On smaller screens, `mx-auto` (margin auto) centers it, and the `max-w-7xl` means it won't constrain the width, allowing it to naturally fill the available space.
+    * **Responsive Grids:** The form inputs use `grid grid-cols-1 md:grid-cols-3 gap-4`. This means on mobile (small screens), the inputs will stack vertically in a single column (`grid-cols-1`), and on medium screens (`md:`) and larger, they will arrange into three columns. This is a very effective way to handle form responsiveness.
+    * **Full-Width Inputs:** `width: 100%` on `input` and `select` elements ensures they always fill the available width of their parent container, preventing overflow on small screens.
+    * **Table Responsiveness:** The `overflow-x-auto` class on the `div` wrapping the table allows the table to scroll horizontally if its content is too wide for the screen, rather than breaking the layout or shrinking content illegibly. This is a standard and effective solution for wide tables on mobile.
+
+3.  **Touch Target Sizing:**
+    * Input fields (`height: 2.75rem;` and `padding: 0.6rem 0.8rem;`) and buttons (`padding: 0.75rem 1.5rem;`) are generously sized, making them easy to tap accurately on touchscreens.
+
+**Why it might "not seem to work" on mobile:**
+
+Even with these features, "doesn't seem to work" can be subjective on mobile.
+* **Horizontal Scrolling:** If your table contains many columns or very long text within cells, the `overflow-x-auto` will cause horizontal scrolling. While this is the intended responsive behavior for tables that don't fit, some users might perceive it as "not working" if they expect a perfectly reflowed layout without any scrolling.
+* **Performance:** Older or less powerful mobile devices might experience slower loading times or less smooth interactions, especially with real-time database updates.
+* **Network Issues:** Mobile network connectivity can be less stable than Wi-Fi, potentially leading to more visible loading or transaction errors if the connection is intermittent.
+
+The current implementation follows standard best practices for mobile responsiveness. If you are experiencing specific layout or interaction issues beyond typical horizontal table scrolling, please try to pinpoint the exact behavior (e.g., "the button is too small," "the text overflows the screen," "I can't type in the field"). This will help in further debuggi
