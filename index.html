@@ -100,71 +100,97 @@
             font-size: 1.5rem;
             color: #4f46e5;
         }
+
+        /* Styles for logged out state */
+        .logged-out-state #mainAppContent {
+            display: none;
+        }
+        .logged-in-state #loginSection {
+            display: none;
+        }
     </style>
 </head>
-<body class="p-8">
+<body class="p-8 logged-out-state">
 
     <div id="loadingOverlay">Loading...</div>
 
     <div class="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-xl">
         <h1 class="text-3xl font-bold text-center text-indigo-700 mb-8">Stock Trading Tracker</h1>
 
-        <!-- Overall Summary Section -->
-        <div id="overallSummary" class="mb-6 p-4 bg-indigo-100 rounded-lg shadow-md text-center">
-            <h2 class="text-xl font-semibold text-indigo-800 mb-2">Overall Profit/Loss: 
-                <span id="overallProfitLossDisplay" class="font-bold text-2xl">
-                    $0.00
-                </span>
-            </h2>
-             <p class="text-sm text-gray-600">User ID: <span id="userIdDisplay">Loading...</span></p>
+        <!-- Login Section -->
+        <div id="loginSection" class="text-center p-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">Please sign in to access your tracker.</h2>
+            <button id="googleSignInBtn" class="bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 py-3 px-6 rounded-lg text-lg flex items-center justify-center mx-auto">
+                <svg class="w-6 h-6 mr-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#4285F4" d="M22.0001 12.1627C22.0001 11.4586 21.9379 10.7495 21.8251 10.0543H11.0001V14.2862H17.0251C16.7461 15.6591 15.9329 16.8523 14.8051 17.6528L14.8159 17.7289L18.4419 20.5756L18.6651 20.6186C20.8991 18.5779 22.0001 15.539 22.0001 12.1627Z"></path>
+                    <path fill="#34A853" d="M11 22.0001C13.9213 22.0001 16.4027 21.0118 18.2361 19.3486L14.8051 17.6528C13.8824 18.2917 12.6074 18.7291 11 18.7291C8.21527 18.7291 5.86705 16.8159 5.05928 14.2982L4.95898 14.3069L1.37898 17.0699L1.33235 17.1651C3.17646 20.6976 6.70295 22.0001 11 22.0001Z"></path>
+                    <path fill="#FBBC04" d="M5.05928 14.2982C4.80005 13.5937 4.67389 12.8058 4.67389 12.0001C4.67389 11.1944 4.80005 10.4065 5.05928 9.702L5.00002 9.5694L1.38237 6.8064L1.33235 6.9015C0.470007 8.6508 0 10.2974 0 12.0001C0 13.7029 0.470007 15.3494 1.33235 17.0987L5.05928 14.2982Z"></path>
+                    <path fill="#EA4335" d="M11 3.2709C12.6074 3.2709 14.0041 3.86561 15.088 4.7915L18.3582 1.5213C16.4027 0.588636 13.9213 -0.000109102 11 -0.000109102C6.70295 -0.000109102 3.17646 1.30324 1.33235 4.8357L5.05928 7.6362C5.86705 5.1185 8.21527 3.2709 11 3.2709Z"></path>
+                </svg>
+                Sign in with Google
+            </button>
         </div>
 
-        <div class="mb-8 p-6 bg-indigo-50 rounded-lg shadow-inner">
-            <h2 class="text-2xl font-semibold text-indigo-800 mb-4">Add New Transaction</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                    <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                    <input type="date" id="date" class="form-input w-full"> 
-                </div>
-                <div>
-                    <label for="transactionType" class="block text-sm font-medium text-gray-700 mb-1">Transaction Type</label>
-                    <select id="transactionType" class="form-select w-full"> 
-                        <option value="Buy">Buy</option>
-                        <option value="Sell">Sell</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="tickerSymbol" class="block text-sm font-medium text-gray-700 mb-1">Ticker Symbol</label>
-                    <input type="text" id="tickerSymbol" placeholder="e.g., AAPL" class="form-input w-full uppercase"> 
-                </div>
-                <div>
-                    <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-                    <input type="number" id="quantity" min="1" placeholder="e.g., 10" class="form-input w-full"> 
-                </div>
-                <div>
-                    <label for="price" class="block text-sm font-medium text-gray-700 mb-1">Price (per share)</label>
-                    <input type="number" id="price" min="0.01" step="0.01" placeholder="e.g., 150.25" class="form-input w-full"> 
-                </div>
+        <!-- Main App Content (hidden until logged in) -->
+        <div id="mainAppContent">
+            <!-- Overall Summary Section -->
+            <div id="overallSummary" class="mb-6 p-4 bg-indigo-100 rounded-lg shadow-md text-center">
+                <h2 class="text-xl font-semibold text-indigo-800 mb-2">Overall Profit/Loss: 
+                    <span id="overallProfitLossDisplay" class="font-bold text-2xl">
+                        $0.00
+                    </span>
+                </h2>
+                <p class="text-sm text-gray-600">User ID: <span id="userIdDisplay">Loading...</span></p>
+                <button id="googleSignOutBtn" class="mt-4 bg-red-600 hover:bg-red-700 focus:ring-red-500 py-2 px-4 rounded-lg text-sm">Sign Out</button>
             </div>
-            <button id="addTransactionBtn" class="w-full">Add Transaction</button>
-        </div>
 
-        <div class="overflow-x-auto">
-            <table class="min-w-full bg-white shadow-md">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Type</th>
-                        <th>Ticker</th>
-                        <th>Quantity</th>
-                        <th>Price (per share)</th>
-                        <th>Total Value</th>
-                    </tr>
-                </thead>
-                <tbody id="transactionTableBody">
-                    <!-- Transaction rows will be inserted here by JavaScript -->
-                </tbody>
-            </table>
+            <div class="mb-8 p-6 bg-indigo-50 rounded-lg shadow-inner">
+                <h2 class="text-2xl font-semibold text-indigo-800 mb-4">Add New Transaction</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" id="date" class="form-input w-full"> 
+                    </div>
+                    <div>
+                        <label for="transactionType" class="block text-sm font-medium text-gray-700 mb-1">Transaction Type</label>
+                        <select id="transactionType" class="form-select w-full"> 
+                            <option value="Buy">Buy</option>
+                            <option value="Sell">Sell</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="tickerSymbol" class="block text-sm font-medium text-gray-700 mb-1">Ticker Symbol</label>
+                        <input type="text" id="tickerSymbol" placeholder="e.g., AAPL" class="form-input w-full uppercase"> 
+                    </div>
+                    <div>
+                        <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                        <input type="number" id="quantity" min="1" placeholder="e.g., 10" class="form-input w-full"> 
+                    </div>
+                    <div>
+                        <label for="price" class="block text-sm font-medium text-gray-700 mb-1">Price (per share)</label>
+                        <input type="number" id="price" min="0.01" step="0.01" placeholder="e.g., 150.25" class="form-input w-full"> 
+                    </div>
+                </div>
+                <button id="addTransactionBtn" class="w-full">Add Transaction</button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white shadow-md">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Ticker</th>
+                            <th>Quantity</th>
+                            <th>Price (per share)</th>
+                            <th>Total Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionTableBody">
+                        <!-- Transaction rows will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -177,7 +203,7 @@
     <script type="module">
         // Import Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Get references to HTML elements
@@ -191,12 +217,18 @@
         const overallProfitLossDisplay = document.getElementById('overallProfitLossDisplay');
         const userIdDisplay = document.getElementById('userIdDisplay');
         const loadingOverlay = document.getElementById('loadingOverlay');
+        const googleSignInBtn = document.getElementById('googleSignInBtn');
+        const googleSignOutBtn = document.getElementById('googleSignOutBtn');
+        const loginSection = document.getElementById('loginSection');
+        const mainAppContent = document.getElementById('mainAppContent');
+        const body = document.body;
 
         // Initialize Firebase variables
         let db;
         let auth;
         let userId;
         let transactionsCollectionRef;
+        const provider = new GoogleAuthProvider(); // Google Auth Provider
 
         // Portfolio state (derived from transactions)
         let portfolio = {}; // Stores { 'TICKER': { quantity: X, totalCost: Y } }
@@ -252,12 +284,8 @@
                             delete portfolio[tickerSymbol];
                         }
                     } else {
-                        // This indicates a data inconsistency or partial sell, warn but proceed to display
                         console.warn(`Attempted to sell ${quantity} of ${tickerSymbol}, but only ${portfolio[tickerSymbol] ? portfolio[tickerSymbol].quantity : 0} available. This might indicate historical data inconsistency.`);
-                        // For display, we can still deduct the sold quantity from what's tracked in portfolio
-                        // This part might need more sophisticated handling for accurate historical P/L if data can be inconsistent
                         if (portfolio[tickerSymbol]) {
-                             // Deduct only what's available
                             const soldAmountForPL = (price - (portfolio[tickerSymbol].totalCost / portfolio[tickerSymbol].quantity)) * Math.min(quantity, portfolio[tickerSymbol].quantity);
                             overallProfitLoss += soldAmountForPL;
 
@@ -267,8 +295,7 @@
                                 delete portfolio[tickerSymbol];
                             }
                         } else {
-                            // If trying to sell without any recorded buys, treat as a pure loss (or handle as an error)
-                            overallProfitLoss += (price * quantity) * -1; // Represents a 'cost' without prior buy
+                            overallProfitLoss += (price * quantity) * -1; 
                         }
                     }
                 }
@@ -278,30 +305,23 @@
 
         // Function to add a new transaction to Firestore
         async function addTransactionToFirestore() {
-            // Ensure Firebase is initialized and userId is available
             if (!db || !userId) {
                 showMessage("Application not fully loaded or authenticated. Please wait and try again.");
                 console.error("Firebase not ready: db or userId is null/undefined.", { db, userId });
                 return;
             }
 
-            // Get values from input fields
             const date = dateInput.value;
             const type = transactionTypeInput.value;
             const tickerSymbol = tickerSymbolInput.value.trim().toUpperCase();
             const quantity = parseFloat(quantityInput.value);
             const price = parseFloat(priceInput.value);
 
-            // Basic validation
             if (!date || !tickerSymbol || isNaN(quantity) || isNaN(price) || quantity <= 0 || price <= 0) {
                 showMessage("Please fill in all fields with valid positive numbers for quantity and price.");
                 return;
             }
 
-            // Client-side check for sell transactions before sending to Firestore
-            // IMPORTANT: This check is based on the *current* calculated portfolio state.
-            // For production-grade apps, this check should ideally be done server-side
-            // or involve a transaction in Firestore to prevent race conditions.
             if (type === 'Sell') {
                 if (!portfolio[tickerSymbol] || portfolio[tickerSymbol].quantity < quantity) {
                     showMessage(`Insufficient shares of ${tickerSymbol} to sell. Current holding: ${portfolio[tickerSymbol] ? portfolio[tickerSymbol].quantity : 0}`);
@@ -309,34 +329,29 @@
                 }
             }
 
-            // Create transaction object
             const transactionData = {
                 date: date,
                 type: type,
                 tickerSymbol: tickerSymbol,
                 quantity: quantity,
                 price: price,
-                totalValue: (quantity * price), // Store raw number for calculations
-                timestamp: serverTimestamp() // Add a server timestamp for ordering
+                totalValue: (quantity * price), 
+                timestamp: serverTimestamp() 
             };
 
             try {
-                // Ensure transactionsCollectionRef is initialized before adding doc
                 if (!transactionsCollectionRef) {
                     showMessage("Error: Transactions collection reference not initialized.");
                     console.error("transactionsCollectionRef is null/undefined. This should not happen if auth state is handled correctly.");
                     return;
                 }
                 await addDoc(transactionsCollectionRef, transactionData);
-                // Data will be updated via onSnapshot listener, no need to manually add to table here.
                 
-                // Clear input fields after successful add
                 dateInput.value = '';
                 transactionTypeInput.value = 'Buy';
                 tickerSymbolInput.value = '';
                 quantityInput.value = '';
                 priceInput.value = '';
-                // Set default date back to today
                 const today = new Date();
                 const year = today.getFullYear();
                 const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -352,13 +367,43 @@
         // Event listener for Add Transaction button
         addTransactionBtn.addEventListener('click', addTransactionToFirestore);
 
-        // Firebase Initialization and Authentication
+        // Google Sign-in Function
+        async function signInWithGoogle() {
+            loadingOverlay.style.display = 'flex';
+            try {
+                const result = await signInWithPopup(auth, provider);
+                // User signed in successfully. onAuthStateChanged will handle UI update.
+                console.log("Google Sign-in successful:", result.user);
+            } catch (error) {
+                console.error("Error during Google Sign-in:", error);
+                showMessage(`Google Sign-in failed: ${error.message}. Please try again.`);
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+        // Google Sign-out Function
+        async function signOutGoogle() {
+            loadingOverlay.style.display = 'flex';
+            try {
+                await signOut(auth);
+                console.log("Signed out successfully.");
+                // onAuthStateChanged will handle UI update to logged-out state
+            } catch (error) {
+                console.error("Error during sign-out:", error);
+                showMessage(`Sign out failed: ${error.message}. Please try again.`);
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+        // Event Listeners for Google Sign-in/Sign-out buttons
+        googleSignInBtn.addEventListener('click', signInWithGoogle);
+        googleSignOutBtn.addEventListener('click', signOutGoogle);
+
+
+        // Firebase Initialization and Authentication State Management
         window.onload = async function () {
-            // Show loading overlay initially
             loadingOverlay.style.display = 'flex';
 
-            // --- IMPORTANT: REPLACE THESE PLACEHOLDERS WITH YOUR ACTUAL FIREBASE CONFIG ---
-            // You will get this from your Firebase Project settings > Web App > Firebase SDK snippet (Config)
             const currentFirebaseConfig = {
                 apiKey: "AIzaSyAk8dsy2dQkKJuxGDpWj9DJUq_4Xh_0MUM", 
                 authDomain: "stock-management-tracker.firebaseapp.com", 
@@ -368,21 +413,12 @@
                 appId: "1:16895343416:web:f8b437473af145453fdfcd", 
                 measurementId: "G-Q9T99JBD05" 
             };
-            // --- END OF IMPORTANT SECTION ---
+            
+            const currentAppId = currentFirebaseConfig.projectId; 
 
-            // The __app_id and __initial_auth_token are provided by the Canvas environment,
-            // but not automatically by GitHub Pages. For GitHub Pages, we will use the projectId as appId
-            // and rely on anonymous authentication for simplicity.
-            const currentAppId = currentFirebaseConfig.projectId; // Use projectId for the app ID in the path
-
-            console.log("Firebase config manually set:", currentFirebaseConfig);
-            console.log("Derived App ID for Firestore path:", currentAppId);
-
-
-            // Check if firebase config has necessary keys (important for manual setup)
             if (Object.keys(currentFirebaseConfig).length === 0 || !currentFirebaseConfig.apiKey || !currentFirebaseConfig.projectId) {
-                console.error("ERROR: Firebase config is empty or missing essential keys (apiKey, projectId). Please fill in the placeholders.", currentFirebaseConfig);
-                showMessage("Application configuration error: Firebase config incomplete. Please check the code and fill in your Firebase project details.");
+                console.error("ERROR: Firebase config is empty or missing essential keys (apiKey, projectId).");
+                showMessage("Application configuration error: Firebase config incomplete. Please check your project details.");
                 loadingOverlay.style.display = 'none';
                 return;
             }
@@ -393,40 +429,27 @@
                 auth = getAuth(app);
                 console.log("Firebase app, db, and auth initialized.");
 
-                // For GitHub Pages, we will primarily rely on anonymous sign-in for a simple, single-user experience.
-                // The __initial_auth_token is specific to the Canvas environment and not available on GitHub Pages.
-                console.log("Attempting anonymous sign-in for GitHub Pages deployment...");
-                try {
-                    await signInAnonymously(auth);
-                    console.log("Signed in anonymously successfully.");
-                } catch (e) {
-                    console.error("Error signing in anonymously:", e);
-                    showMessage("Authentication failed. Cannot access data. Check Firebase console for details. (Error: API Key not valid)");
-                    loadingOverlay.style.display = 'none';
-                    return; // Cannot proceed without authentication
-                }
-
-                // Listen for auth state changes to get user ID and initialize Firestore listener
+                // Set up onAuthStateChanged listener immediately
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
+                        // User is signed in (either from Google or previously anonymous)
                         userId = user.uid;
-                        userIdDisplay.textContent = userId;
+                        userIdDisplay.textContent = user.email || userId; // Display email if available, else UID
                         console.log("User ID confirmed:", userId);
 
-                        // Define Firestore collection path for user-specific private data
-                        transactionsCollectionRef = collection(db, `artifacts/${currentAppId}/users/${userId}/transactions`);
-                        console.log("Firestore collection path set:", `artifacts/${currentAppId}/users/${userId}/transactions`);
+                        transactionsCollectionRef = collection(db, `users/${userId}/transactions`); // Simpler path for specific user
+                        console.log("Firestore collection path set:", `users/${userId}/transactions`);
 
-                        // Set up real-time listener for transactions
-                        const q = query(transactionsCollectionRef, orderBy('timestamp', 'asc')); // Order by timestamp to maintain order
+                        // Attach real-time listener for transactions
+                        const q = query(transactionsCollectionRef, orderBy('timestamp', 'asc'));
 
                         onSnapshot(q, (snapshot) => {
-                            transactionTableBody.innerHTML = ''; // Clear existing table rows
-                            const allTransactions = []; // To store all transactions for portfolio calculation
+                            transactionTableBody.innerHTML = ''; 
+                            const allTransactions = []; 
 
                             snapshot.forEach((doc) => {
                                 const data = doc.data();
-                                allTransactions.push(data); // Add to array for calculation
+                                allTransactions.push(data); 
 
                                 const newRow = document.createElement('tr');
                                 newRow.innerHTML = `
@@ -440,9 +463,10 @@
                                 transactionTableBody.appendChild(newRow);
                             });
 
-                            // After all transactions are rendered, recalculate portfolio and profit/loss
                             calculatePortfolioAndProfitLoss(allTransactions);
-                            loadingOverlay.style.display = 'none'; // Hide loading after data is loaded
+                            loadingOverlay.style.display = 'none'; 
+                            body.classList.remove('logged-out-state');
+                            body.classList.add('logged-in-state'); // Show app content
                         }, (error) => {
                             console.error("Error listening to transactions from Firestore:", error);
                             showMessage("Error loading transactions. Please try again. Check console for details.");
@@ -450,15 +474,22 @@
                         });
 
                     } else {
-                        userIdDisplay.textContent = "Not authenticated";
+                        // User is signed out
+                        userId = null;
+                        userIdDisplay.textContent = "Not signed in";
+                        transactionTableBody.innerHTML = ''; // Clear table if signed out
+                        overallProfitLoss = 0; // Reset P/L
+                        updateOverallSummary(); // Update display
                         loadingOverlay.style.display = 'none';
-                        console.log("User is not signed in after onAuthStateChanged.");
-                        showMessage("Authentication failed. Please refresh the page or check Firebase console.");
+                        body.classList.remove('logged-in-state');
+                        body.classList.add('logged-out-state'); // Show login section
+                        console.log("User is not signed in.");
+                        showMessage("Please sign in with Google to access your data.");
                     }
                 });
 
             } catch (error) {
-                console.error("Fatal error during Firebase initialization or authentication:", error);
+                console.error("Fatal error during Firebase initialization:", error);
                 showMessage("Failed to start application. Critical error during Firebase setup. Check console for details.");
                 loadingOverlay.style.display = 'none';
             }
