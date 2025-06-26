@@ -357,39 +357,32 @@
             // Show loading overlay initially
             loadingOverlay.style.display = 'flex';
 
-            let currentAppId = 'default-app-id'; // Default value
-            let currentFirebaseConfig = {}; // Default empty config
+            // --- IMPORTANT: REPLACE THESE PLACEHOLDERS WITH YOUR ACTUAL FIREBASE CONFIG ---
+            // You will get this from your Firebase Project settings > Web App > Firebase SDK snippet (Config)
+            const currentFirebaseConfig = {
+                apiKey: "AIzaSyAk8dsy2dQkKJuxGDpWj9DJUq_4Xh_0MUM", // 여기에 실제 API 키를 입력하세요!
+                authDomain: "stock-management-tracker.firebaseapp.com", // 여기에 실제 Auth 도메인을 입력하세요!
+                projectId: "stock-management-tracker", // 여기에 실제 프로젝트 ID를 입력하세요!
+                storageBucket: "stock-management-tracker.firebasestorage.app", // 여기에 실제 스토리지 버킷을 입력하세요!
+                messagingSenderId: "16895343416", // 여기에 실제 메시징 센더 ID를 입력하세요!
+                appId: "1:16895343416:web:f8b437473af145453fdfcd", // 여기에 실제 앱 ID를 입력하세요!
+                measurementId: "G-Q9T99JBD05" // Optional, but included as provided
+            };
+            // --- END OF IMPORTANT SECTION ---
 
-            // Try to get __app_id
-            if (typeof __app_id !== 'undefined' && __app_id) {
-                currentAppId = __app_id;
-                console.log("App ID detected:", currentAppId);
-            } else {
-                console.warn("WARN: __app_id is not defined by the environment. Using 'default-app-id'. This may cause issues with Firestore paths.");
-            }
+            // The __app_id and __initial_auth_token are provided by the Canvas environment,
+            // but not automatically by GitHub Pages. For GitHub Pages, we will use the projectId as appId
+            // and rely on anonymous authentication for simplicity.
+            const currentAppId = currentFirebaseConfig.projectId; // Use projectId for the app ID in the path
 
-            // Try to get __firebase_config
-            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                try {
-                    currentFirebaseConfig = JSON.parse(__firebase_config);
-                    console.log("Firebase config loaded successfully.");
-                } catch (e) {
-                    console.error("ERROR: Failed to parse __firebase_config. It might be malformed JSON.", e);
-                    showMessage("Application configuration error: Invalid Firebase config. Contact support.");
-                    loadingOverlay.style.display = 'none';
-                    return;
-                }
-            } else {
-                console.error("ERROR: __firebase_config is not defined by the environment. Firebase cannot be initialized.");
-                showMessage("Application configuration error: Firebase config missing. Contact support.");
-                loadingOverlay.style.display = 'none';
-                return;
-            }
+            console.log("Firebase config manually set:", currentFirebaseConfig);
+            console.log("Derived App ID for Firestore path:", currentAppId);
 
-            // Check if firebase config has necessary keys
+
+            // Check if firebase config has necessary keys (important for manual setup)
             if (Object.keys(currentFirebaseConfig).length === 0 || !currentFirebaseConfig.apiKey || !currentFirebaseConfig.projectId) {
-                console.error("ERROR: Firebase config is empty or missing essential keys (apiKey, projectId).", currentFirebaseConfig);
-                showMessage("Application configuration error: Incomplete Firebase config. Contact support.");
+                console.error("ERROR: Firebase config is empty or missing essential keys (apiKey, projectId). Please fill in the placeholders.", currentFirebaseConfig);
+                showMessage("Application configuration error: Firebase config incomplete. Please check the code and fill in your Firebase project details.");
                 loadingOverlay.style.display = 'none';
                 return;
             }
@@ -400,32 +393,17 @@
                 auth = getAuth(app);
                 console.log("Firebase app, db, and auth initialized.");
 
-                // Attempt authentication
-                let initialAuthAttempted = false;
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    console.log("Attempting sign-in with custom token...");
-                    try {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                        console.log("Signed in with custom token successfully.");
-                        initialAuthAttempted = true;
-                    } catch (e) {
-                        console.error("Error signing in with custom token:", e);
-                        showMessage("Authentication failed. Trying anonymous sign-in...");
-                        // Fallback to anonymous if custom token fails
-                    }
-                } 
-                
-                if (!initialAuthAttempted) { // Only try anonymous if custom token wasn't used or failed
-                    console.log("Attempting anonymous sign-in...");
-                    try {
-                        await signInAnonymously(auth);
-                        console.log("Signed in anonymously.");
-                    } catch (e) {
-                        console.error("Error signing in anonymously:", e);
-                        showMessage("Authentication failed. Cannot access data.");
-                        loadingOverlay.style.display = 'none';
-                        return; // Cannot proceed without authentication
-                    }
+                // For GitHub Pages, we will primarily rely on anonymous sign-in for a simple, single-user experience.
+                // The __initial_auth_token is specific to the Canvas environment and not available on GitHub Pages.
+                console.log("Attempting anonymous sign-in for GitHub Pages deployment...");
+                try {
+                    await signInAnonymously(auth);
+                    console.log("Signed in anonymously successfully.");
+                } catch (e) {
+                    console.error("Error signing in anonymously:", e);
+                    showMessage("Authentication failed. Cannot access data. Check Firebase console for details. (Error: API Key not valid)");
+                    loadingOverlay.style.display = 'none';
+                    return; // Cannot proceed without authentication
                 }
 
                 // Listen for auth state changes to get user ID and initialize Firestore listener
@@ -475,7 +453,7 @@
                         userIdDisplay.textContent = "Not authenticated";
                         loadingOverlay.style.display = 'none';
                         console.log("User is not signed in after onAuthStateChanged.");
-                        showMessage("Authentication failed. Please refresh the page.");
+                        showMessage("Authentication failed. Please refresh the page or check Firebase console.");
                     }
                 });
 
