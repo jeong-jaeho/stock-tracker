@@ -252,9 +252,24 @@
                             delete portfolio[tickerSymbol];
                         }
                     } else {
-                        // This case should ideally not happen if data is consistent, but for robustness
-                        console.warn(`Attempted to sell ${quantity} of ${tickerSymbol}, but only ${portfolio[tickerSymbol] ? portfolio[tickerSymbol].quantity : 0} available.`);
-                        // Optionally add logic to track "phantom" sales or adjust overallProfitLoss for missing buys
+                        // This indicates a data inconsistency or partial sell, warn but proceed to display
+                        console.warn(`Attempted to sell ${quantity} of ${tickerSymbol}, but only ${portfolio[tickerSymbol] ? portfolio[tickerSymbol].quantity : 0} available. This might indicate historical data inconsistency.`);
+                        // For display, we can still deduct the sold quantity from what's tracked in portfolio
+                        // This part might need more sophisticated handling for accurate historical P/L if data can be inconsistent
+                        if (portfolio[tickerSymbol]) {
+                             // Deduct only what's available
+                            const soldAmountForPL = (price - (portfolio[tickerSymbol].totalCost / portfolio[tickerSymbol].quantity)) * Math.min(quantity, portfolio[tickerSymbol].quantity);
+                            overallProfitLoss += soldAmountForPL;
+
+                            portfolio[tickerSymbol].totalCost -= (portfolio[tickerSymbol].totalCost / portfolio[tickerSymbol].quantity) * Math.min(quantity, portfolio[tickerSymbol].quantity);
+                            portfolio[tickerSymbol].quantity -= Math.min(quantity, portfolio[tickerSymbol].quantity);
+                            if (portfolio[tickerSymbol].quantity === 0) {
+                                delete portfolio[tickerSymbol];
+                            }
+                        } else {
+                            // If trying to sell without any recorded buys, treat as a pure loss (or handle as an error)
+                            overallProfitLoss += (price * quantity) * -1; // Represents a 'cost' without prior buy
+                        }
                     }
                 }
             });
@@ -263,6 +278,13 @@
 
         // Function to add a new transaction to Firestore
         async function addTransactionToFirestore() {
+            // Ensure Firebase is initialized and userId is available
+            if (!db || !userId) {
+                showMessage("Application not fully loaded or authenticated. Please wait and try again.");
+                console.error("Firebase not ready: db or userId is null/undefined.", { db, userId });
+                return;
+            }
+
             // Get values from input fields
             const date = dateInput.value;
             const type = transactionTypeInput.value;
@@ -277,6 +299,9 @@
             }
 
             // Client-side check for sell transactions before sending to Firestore
+            // IMPORTANT: This check is based on the *current* calculated portfolio state.
+            // For production-grade apps, this check should ideally be done server-side
+            // or involve a transaction in Firestore to prevent race conditions.
             if (type === 'Sell') {
                 if (!portfolio[tickerSymbol] || portfolio[tickerSymbol].quantity < quantity) {
                     showMessage(`Insufficient shares of ${tickerSymbol} to sell. Current holding: ${portfolio[tickerSymbol] ? portfolio[tickerSymbol].quantity : 0}`);
@@ -296,6 +321,12 @@
             };
 
             try {
+                // Ensure transactionsCollectionRef is initialized before adding doc
+                if (!transactionsCollectionRef) {
+                    showMessage("Error: Transactions collection reference not initialized.");
+                    console.error("transactionsCollectionRef is null/undefined. This should not happen if auth state is handled correctly.");
+                    return;
+                }
                 await addDoc(transactionsCollectionRef, transactionData);
                 // Data will be updated via onSnapshot listener, no need to manually add to table here.
                 
@@ -313,8 +344,8 @@
                 dateInput.value = `${year}-${month}-${day}`;
 
             } catch (e) {
-                console.error("Error adding document: ", e);
-                showMessage("Error adding transaction. Please try again.");
+                console.error("Error adding document to Firestore: ", e);
+                showMessage("Error adding transaction. Please try again. Check console for details.");
             }
         }
 
@@ -323,31 +354,78 @@
 
         // Firebase Initialization and Authentication
         window.onload = async function () {
-            // Hide loading overlay
+            // Show loading overlay initially
             loadingOverlay.style.display = 'flex';
 
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+            let currentAppId = 'default-app-id'; // Default value
+            let currentFirebaseConfig = {}; // Default empty config
 
-            if (Object.keys(firebaseConfig).length === 0) {
-                console.error("Firebase config is not defined. Please ensure __firebase_config is set.");
-                showMessage("Application configuration error. Please contact support.");
+            // Try to get __app_id
+            if (typeof __app_id !== 'undefined' && __app_id) {
+                currentAppId = __app_id;
+                console.log("App ID detected:", currentAppId);
+            } else {
+                console.warn("WARN: __app_id is not defined by the environment. Using 'default-app-id'. This may cause issues with Firestore paths.");
+            }
+
+            // Try to get __firebase_config
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                try {
+                    currentFirebaseConfig = JSON.parse(__firebase_config);
+                    console.log("Firebase config loaded successfully.");
+                } catch (e) {
+                    console.error("ERROR: Failed to parse __firebase_config. It might be malformed JSON.", e);
+                    showMessage("Application configuration error: Invalid Firebase config. Contact support.");
+                    loadingOverlay.style.display = 'none';
+                    return;
+                }
+            } else {
+                console.error("ERROR: __firebase_config is not defined by the environment. Firebase cannot be initialized.");
+                showMessage("Application configuration error: Firebase config missing. Contact support.");
+                loadingOverlay.style.display = 'none';
+                return;
+            }
+
+            // Check if firebase config has necessary keys
+            if (Object.keys(currentFirebaseConfig).length === 0 || !currentFirebaseConfig.apiKey || !currentFirebaseConfig.projectId) {
+                console.error("ERROR: Firebase config is empty or missing essential keys (apiKey, projectId).", currentFirebaseConfig);
+                showMessage("Application configuration error: Incomplete Firebase config. Contact support.");
                 loadingOverlay.style.display = 'none';
                 return;
             }
 
             try {
-                const app = initializeApp(firebaseConfig);
+                const app = initializeApp(currentFirebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
+                console.log("Firebase app, db, and auth initialized.");
 
-                // Sign in with custom token if available, otherwise anonymously
+                // Attempt authentication
+                let initialAuthAttempted = false;
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                    console.log("Signed in with custom token");
-                } else {
-                    await signInAnonymously(auth);
-                    console.log("Signed in anonymously");
+                    console.log("Attempting sign-in with custom token...");
+                    try {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                        console.log("Signed in with custom token successfully.");
+                        initialAuthAttempted = true;
+                    } catch (e) {
+                        console.error("Error signing in with custom token:", e);
+                        showMessage("Authentication failed. Trying anonymous sign-in...");
+                        // Fallback to anonymous if custom token fails
+                    }
+                } 
+                
+                if (!initialAuthAttempted) { // Only try anonymous if custom token wasn't used or failed
+                    console.log("Attempting anonymous sign-in...");
+                    try {
+                        await signInAnonymously(auth);
+                        console.log("Signed in anonymously.");
+                    } catch (e) {
+                        console.error("Error signing in anonymously:", e);
+                        showMessage("Authentication failed. Cannot access data.");
+                        loadingOverlay.style.display = 'none';
+                        return; // Cannot proceed without authentication
+                    }
                 }
 
                 // Listen for auth state changes to get user ID and initialize Firestore listener
@@ -355,10 +433,11 @@
                     if (user) {
                         userId = user.uid;
                         userIdDisplay.textContent = userId;
-                        console.log("User ID:", userId);
+                        console.log("User ID confirmed:", userId);
 
                         // Define Firestore collection path for user-specific private data
-                        transactionsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/transactions`);
+                        transactionsCollectionRef = collection(db, `artifacts/${currentAppId}/users/${userId}/transactions`);
+                        console.log("Firestore collection path set:", `artifacts/${currentAppId}/users/${userId}/transactions`);
 
                         // Set up real-time listener for transactions
                         const q = query(transactionsCollectionRef, orderBy('timestamp', 'asc')); // Order by timestamp to maintain order
@@ -387,21 +466,22 @@
                             calculatePortfolioAndProfitLoss(allTransactions);
                             loadingOverlay.style.display = 'none'; // Hide loading after data is loaded
                         }, (error) => {
-                            console.error("Error listening to transactions:", error);
-                            showMessage("Error loading transactions. Please try again.");
+                            console.error("Error listening to transactions from Firestore:", error);
+                            showMessage("Error loading transactions. Please try again. Check console for details.");
                             loadingOverlay.style.display = 'none';
                         });
 
                     } else {
                         userIdDisplay.textContent = "Not authenticated";
                         loadingOverlay.style.display = 'none';
-                        console.log("No user signed in.");
+                        console.log("User is not signed in after onAuthStateChanged.");
+                        showMessage("Authentication failed. Please refresh the page.");
                     }
                 });
 
             } catch (error) {
-                console.error("Error initializing Firebase or signing in:", error);
-                showMessage("Failed to initialize application. Check console for details.");
+                console.error("Fatal error during Firebase initialization or authentication:", error);
+                showMessage("Failed to start application. Critical error during Firebase setup. Check console for details.");
                 loadingOverlay.style.display = 'none';
             }
 
